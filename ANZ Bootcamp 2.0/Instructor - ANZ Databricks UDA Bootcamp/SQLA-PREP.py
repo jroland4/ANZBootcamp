@@ -84,32 +84,6 @@ stdout.decode('utf-8'), stderr.decode('utf-8')
 
 # COMMAND ----------
 
-process = subprocess.Popen(['wget', '-P', local_data_path, 'https://www.dropbox.com/s/50q27gaifx10wqn/historical_sensor_data.csv'],
-                     stdout=subprocess.PIPE, 
-                     stderr=subprocess.PIPE)
-stdout, stderr = process.communicate()
-
-stdout.decode('utf-8'), stderr.decode('utf-8')
-
-# COMMAND ----------
-
-# Copy the downloaded data to DBFS
-
-dbutils.fs.rm(f"dbfs:/FileStore/{base_table_path}historical_sensor_data.csv")
-
-dbutils.fs.cp(f"file:/databricks/driver/{local_data_path}historical_sensor_data.csv", f"dbfs:/FileStore/{base_table_path}historical_sensor_data.csv")
-
-# COMMAND ----------
-
-process = subprocess.Popen(['wget', '-P', local_data_path, 'https://www.dropbox.com/s/30m8ay9zp4z8uo2/backfill_sensor_data_final.csv'],
-                     stdout=subprocess.PIPE, 
-                     stderr=subprocess.PIPE)
-stdout, stderr = process.communicate()
-
-stdout.decode('utf-8'), stderr.decode('utf-8')
-
-# COMMAND ----------
-
 # Copy the downloaded data to DBFS
 
 import urllib.request
