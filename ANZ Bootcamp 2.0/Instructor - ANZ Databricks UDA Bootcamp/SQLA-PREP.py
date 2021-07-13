@@ -35,8 +35,12 @@ db_name = spark.conf.get("com.databricks.training.spark.dbName")
 #username_replaced = username.replace(".", "_").replace("@","_")
 username = spark.conf.get("com.databricks.training.spark.userName").replace('.', '_')
 #username = dbutils.widgets.get("user_name")
-base_table_path = f"{username}/deltademoasset/"
-local_data_path = f"{username}/deltademoasset/"
+#base_table_path = f"{username}/deltademoasset/"
+#local_data_path = f"{username}/deltademoasset/"
+
+base_table_path = f"dbfs:/Users/{username}/deltademoasset"
+local_data_path_native = f"/databricks/driver/{username}/deltademoasset"
+local_data_path = f"file:/databricks/driver/{username}/deltademoasset"
 
 
 # Construct the unique database name
@@ -108,46 +112,24 @@ stdout.decode('utf-8'), stderr.decode('utf-8')
 
 # Copy the downloaded data to DBFS
 
-dbutils.fs.rm(f"dbfs:/FileStore/{base_table_path}backfill_sensor_data.csv")
-
-dbutils.fs.cp(f"file:/databricks/driver/{local_data_path}backfill_sensor_data_final.csv", f"dbfs:/FileStore/{base_table_path}backfill_sensor_data.csv")
-
-# COMMAND ----------
-
-# Download Initial CSV file used in the workshop
-process = subprocess.Popen(['wget', '-P', local_data_path, 'https://www.dropbox.com/s/miq89d5oaqz27ct/sensor_readings_current_labeled.csv'],
-                     stdout=subprocess.PIPE, 
-                     stderr=subprocess.PIPE)
-stdout, stderr = process.communicate()
-
-stdout.decode('utf-8'), stderr.decode('utf-8')
-
-# COMMAND ----------
-
-# Copy the downloaded data to DBFS
-
-dbutils.fs.rm(f"dbfs:/FileStore/{base_table_path}sensor_readings_current_labeled.csv")
-
-dbutils.fs.cp(f"file:/databricks/driver/{local_data_path}sensor_readings_current_labeled.csv", f"dbfs:/FileStore/{base_table_path}sensor_readings_current_labeled.csv")
-
-# COMMAND ----------
-
-#Download the Plant dimension data
-
-process = subprocess.Popen(['wget', '-P', local_data_path, 'https://www.dropbox.com/s/bt78cb0vpq0x6u4/plant_data.csv'],
-                     stdout=subprocess.PIPE, 
-                     stderr=subprocess.PIPE)
-stdout, stderr = process.communicate()
-
-stdout.decode('utf-8'), stderr.decode('utf-8')
-
-# COMMAND ----------
-
-# Copy the downloaded data to DBFS
-
-dbutils.fs.rm(f"dbfs:/FileStore/{base_table_path}plant_data.csv")
-
-dbutils.fs.cp(f"file:/databricks/driver/{local_data_path}/plant_data.csv", f"dbfs:/FileStore/{base_table_path}plant_data.csv")
+import urllib.request
+def makeLocal(dbFileName):
+  dbfsPrefix = "file:"
+  if dbFileName.startswith(dbfsPrefix):
+        return dbFileName[len(dbfsPrefix):]
+  else:
+    raise Error(f"missing prefix on [{dbFileName}]")
+def downloadSourceFile(local_name, url):
+  dbfs_path = f"{base_table_path}/raw/{local_name}"
+  local_path = f"{local_data_path}/{local_name}"
+  print(f"#########################")
+  print(f"Downloading [{local_name}] to [{local_path}]")
+  urllib.request.urlretrieve(url, makeLocal(local_path))
+  dbutils.fs.mv(local_path, dbfs_path)
+downloadSourceFile("historical_sensor_data.csv", "https://www.dropbox.com/s/0dc8jqnw387zh1s/historical_sensor_data.csv?dl=1")
+downloadSourceFile("backfill_sensor_data.csv", "https://www.dropbox.com/s/vf0s9hht1hwksj2/backfill_sensor_data.csv?dl=1")
+downloadSourceFile("sensor_readings_current_labeled.csv", "https://www.dropbox.com/s/kvgcqaj51t4zwia/sensor_readings_current_labeled.csv?dl=1")
+downloadSourceFile("plant_data.csv", "https://www.dropbox.com/s/t9yapifpy9l0a9z/plant_data.csv?dl=1")
 
 # COMMAND ----------
 
